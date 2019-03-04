@@ -91,19 +91,19 @@ class UserProfileViewController: UICollectionViewController {
             }
             if let data = documentSnapshot?.data() {
                 for postId in data.keys {
-                    POSTS_REF.document(postId).getDocument(completion: { documentSnapshot, error in
-                        if let error = error {
-                            print(error.localizedDescription)
-                        }
-                        if let dictionary = documentSnapshot?.data() as Dictionary<String, AnyObject>? {
-                            let post = Post(postId: postId, dictionary: dictionary)
-                            self.posts.append(post)
-                            self.posts.sort(by: { (post1, post2) -> Bool in
-                                return post1.creationDate > post2.creationDate
-                            })
-                            self.collectionView.reloadData()
-                        }
+                    
+                    Firestore.fetchPost(with: postId, completion: { post in
+                        
+                        self.posts.append(post)
+                        
+                        self.posts.sort(by: { (post1, post2) -> Bool in
+                            return post1.creationDate > post2.creationDate
+                        })
+                        
+                        self.collectionView.reloadData()
+                        
                     })
+                    
                 }
             }
         }
@@ -117,7 +117,7 @@ class UserProfileViewController: UICollectionViewController {
         
         let docRef = USER_REF.document(currentUid)
         
-        docRef.getDocument { (documentSnapshot, error) in
+        docRef.addSnapshotListener { documentSnapshot, error in
             guard let dictionary = documentSnapshot?.data() as Dictionary<String, AnyObject>? else{ return }
             let user = User(uid: currentUid, dictionary: dictionary)
             self.user = user
@@ -147,6 +147,18 @@ extension UserProfileViewController: UICollectionViewDelegateFlowLayout {
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, referenceSizeForHeaderInSection section: Int) -> CGSize {
         
         return CGSize(width: view.frame.width, height: 200)
+        
+    }
+    
+    override func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        
+        let feedVC = FeedViewController(collectionViewLayout: UICollectionViewFlowLayout())
+        
+        feedVC.viewSinglePost = true
+        
+        feedVC.post = posts[indexPath.item]
+        
+        navigationController?.pushViewController(feedVC, animated: true)
         
     }
     

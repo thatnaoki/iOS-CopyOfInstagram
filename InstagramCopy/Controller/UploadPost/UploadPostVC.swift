@@ -74,6 +74,26 @@ class UploadPostViewController: UIViewController, UITextViewDelegate {
     
     // MARK: Handler
     
+    func updateUserFeeds(with postId: String) {
+        
+        // current userId
+        guard let currentUid = AUTH.currentUser?.uid else {return}
+        
+        // database values
+        let values = [postId: 1]
+        
+        USER_FOLLOWER_REF.document(currentUid).getDocument { documentSnapshot, error in
+            guard let data = documentSnapshot?.data() else {return}
+            // update follower feeds
+            for followerUid in data.keys {
+                USER_FEED_REF.document(followerUid).setData(values, merge: true)
+            }
+            // update current user feed
+            USER_FEED_REF.document(currentUid).setData(values, merge: true)
+        }
+        
+    }
+    
     @objc func handleSharePost() {
         
         // paramaters
@@ -125,9 +145,11 @@ class UploadPostViewController: UIViewController, UITextViewDelegate {
                     if let error = error {
                         print(error.localizedDescription)
                     } else {
-                        // update user-post struct
+                        // update user-post structure
                         guard let documentId = ref?.documentID else {return}
                         USER_POSTS_REF.document(currentUid).setData([documentId : 1], merge: true)
+                        // update user-feeds structure
+                        self.updateUserFeeds(with: documentId)
                     }
                 })
                 

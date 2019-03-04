@@ -7,14 +7,17 @@
 //
 
 import UIKit
+import Firebase
 
 private let reuseIdentifier = "Cell"
 
-class FeedViewController: UICollectionViewController, UICollectionViewDelegateFlowLayout {
+class FeedViewController: UICollectionViewController, UICollectionViewDelegateFlowLayout, FeedCellDelegate {
     
     // MARK: Properties
     
     var posts = [Post]()
+    var viewSinglePost = false
+    var post: Post?
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -27,7 +30,11 @@ class FeedViewController: UICollectionViewController, UICollectionViewDelegateFl
         // configure navigation bar
         configureNavigationBar()
         
-        fetchPosts()
+        // fetch posts
+        if !viewSinglePost {
+            fetchPosts()
+        }
+        
     }
 
     // MARK: UICollectionViewFlowLayout
@@ -50,18 +57,56 @@ class FeedViewController: UICollectionViewController, UICollectionViewDelegateFl
 
 
     override func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        // #warning Incomplete implementation, return the number of items
-        return posts.count
+        
+        if viewSinglePost {
+            return 1
+        } else {
+            return posts.count
+        }
+
     }
 
     override func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: reuseIdentifier, for: indexPath) as! FeedCell
     
-        // Configure the cell
-        cell.post = posts[indexPath.row]
-    
+        cell.delegate = self
+        
+        if viewSinglePost {
+            if let post = self.post {
+                cell.post = post
+            }
+        } else {
+            cell.post = posts[indexPath.row]
+        }
+
         return cell
     }
+    
+    // MARK: FeedCellDelegate Protocol
+    func handleUsernameTapped(for cell: FeedCell) {
+        
+        guard let post = cell.post else {return}
+        
+        let userProfileVC = UserProfileViewController(collectionViewLayout: UICollectionViewFlowLayout())
+        
+        userProfileVC.user = post.user
+        
+        navigationController?.pushViewController(userProfileVC, animated: true)
+        
+    }
+    
+    func handleOptionsTapped(for cell: FeedCell) {
+        print("handle options tapped")
+    }
+    
+    func handleLikeTapped(for cell: FeedCell) {
+        print("handle like tapped")
+    }
+    
+    func handleCommentTapped(for cell: FeedCell) {
+        print("handle comment tapped")
+    }
+    
     
     // MARK: Handlers
     
@@ -71,8 +116,10 @@ class FeedViewController: UICollectionViewController, UICollectionViewDelegateFl
     
     func configureNavigationBar() {
         
-        self.navigationItem.leftBarButtonItem = UIBarButtonItem(title: "Logout", style: .plain, target: self, action: #selector(handleLogout))
-        
+        if !viewSinglePost {
+            self.navigationItem.leftBarButtonItem = UIBarButtonItem(title: "Logout", style: .plain, target: self, action: #selector(handleLogout))
+        }
+    
         self.navigationItem.rightBarButtonItem = UIBarButtonItem(image: #imageLiteral(resourceName: "send2"), style: .plain, target: self, action: #selector(handleShowMessages))
         
         self.navigationItem.title = "Feed"
@@ -109,24 +156,27 @@ class FeedViewController: UICollectionViewController, UICollectionViewDelegateFl
     // MARK: API
     func fetchPosts() {
         
-        POSTS_REF.getDocuments { querySnapshot, error in
-
-            guard let documents = querySnapshot?.documents else {return}
-            
-            for document in documents {
-                let documentId = document.documentID
-                let dictionary = document.data() as Dictionary<String, AnyObject>
-                let post = Post(postId: documentId, dictionary: dictionary)
-                self.posts.append(post)
-                self.posts.sort(by: { (post1, post2) -> Bool in
-                    return post1.creationDate > post2.creationDate
-                })
-                print("post caption is ", post.caption)
-                self.collectionView.reloadData()
-            }
-            
-        }
+        print("fetchposts called")
         
+        guard let currentUid = AUTH.currentUser?.uid else {return}
+        
+        USER_FEED_REF.document(currentUid).addSnapshotListener{ documentSnapshot, error in
+            
+            guard let document = documentSnapshot?.data() else {return}
+            
+            for documentId in document.keys {
+                Firestore.fetchPost(with: documentId, completion: { post in
+                    print("Firestore.fetchPost run")
+                    
+                    self.posts.append(post)
+                    
+                    self.posts.sort(by: { (post1, post2) -> Bool in
+                        return post1.creationDate > post2.creationDate
+                    })
+                    self.collectionView.reloadData()
+                })
+            }
+        }
     }
 
 

@@ -56,9 +56,31 @@ extension Firestore {
     static func fetchUser(with uid: String, completion: @escaping(User) -> ()) {
         
         USER_REF.document(uid).addSnapshotListener({ documentSnapshot, error in
+            
             guard let dictionary = documentSnapshot?.data() as Dictionary<String, AnyObject>? else {return}
+            
             let user = User(uid: uid, dictionary: dictionary)
+            
             completion(user)
         })
+    }
+    
+    static func fetchPost(with postId: String, completion: @escaping(Post) -> ()) {
+        
+        POSTS_REF.document(postId).addSnapshotListener { documentSnapshot, error in
+            
+            guard let dictionary = documentSnapshot?.data() as Dictionary<String, AnyObject>? else {return}
+            guard let ownerUid = dictionary["ownerUid"] as? String else {return}
+            
+            Firestore.fetchUser(with: ownerUid, completion: { user in
+                
+                let post = Post(postId: postId, user: user, dictionary: dictionary)
+                
+                completion(post)
+                
+            })
+            
+        }
+        
     }
 }
