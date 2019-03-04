@@ -75,9 +75,9 @@ class User {
                 print(error?.localizedDescription)
                 return
             }
-            // そもそも誰かをフォローしているかをチェック
+            // check if current user is following anybody
             if let data = document.data() {
-                // このユーザーをフォローしているかをチェック
+                // check if current user is folloing this user
                 if let uid = data[self.uid] as? Int {
                     if uid == 1 {
                         self.isFollowed = true

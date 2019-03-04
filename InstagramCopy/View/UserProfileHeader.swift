@@ -10,13 +10,16 @@ import UIKit
 
 class UserProfileHeader: UICollectionViewCell {
     
+    // MARK: Properties
     var delegate: UserProfileHeaderDelegate?
     
     var user: User? {
         didSet {
-            
             // configure edit profile button
             configureEditProfileFollowButton()
+            
+            // set user stats
+            setUserStats(for: user)
             
             let fullName = user?.name
             nameLabel.text = fullName
@@ -26,8 +29,8 @@ class UserProfileHeader: UICollectionViewCell {
         }
     }
     
-    let profileImageView: UIImageView = {
-        let iv = UIImageView()
+    let profileImageView: CustomImageView = {
+        let iv = CustomImageView()
         iv.contentMode = .scaleAspectFill
         iv.clipsToBounds = true
         iv.backgroundColor = .lightGray
@@ -55,15 +58,15 @@ class UserProfileHeader: UICollectionViewCell {
         label.numberOfLines = 0
         label.textAlignment = .center
         
-        let attributedText = NSMutableAttributedString(string: "0\n", attributes: [NSAttributedString.Key.font: UIFont.boldSystemFont(ofSize: 14)])
+        let attributedText = NSMutableAttributedString(string: "\n", attributes: [NSAttributedString.Key.font: UIFont.boldSystemFont(ofSize: 14)])
         attributedText.append(NSAttributedString(string: "followers", attributes: [NSAttributedString.Key.font: UIFont.systemFont(ofSize: 14), NSAttributedString.Key.foregroundColor: UIColor.lightGray]))
         label.attributedText = attributedText
         
         // add gesture recognizer
-//        let followTap = UITapGestureRecognizer(target: self, action: #selector(handleFollowersTapped))
-//        followTap.numberOfTapsRequired = 1
-//        label.isUserInteractionEnabled = true
-//        label.addGestureRecognizer(followTap)
+        let followTap = UITapGestureRecognizer(target: self, action: #selector(handleFollowersTapped))
+        followTap.numberOfTapsRequired = 1
+        label.isUserInteractionEnabled = true
+        label.addGestureRecognizer(followTap)
         
         return label
     }()
@@ -73,15 +76,16 @@ class UserProfileHeader: UICollectionViewCell {
         label.numberOfLines = 0
         label.textAlignment = .center
         
-        let attributedText = NSMutableAttributedString(string: "0\n", attributes: [NSAttributedString.Key.font: UIFont.boldSystemFont(ofSize: 14)])
+        let attributedText = NSMutableAttributedString(string: "\n", attributes: [NSAttributedString.Key.font: UIFont.boldSystemFont(ofSize: 14)])
         attributedText.append(NSAttributedString(string: "following", attributes: [NSAttributedString.Key.font: UIFont.systemFont(ofSize: 14), NSAttributedString.Key.foregroundColor: UIColor.lightGray]))
         label.attributedText = attributedText
         
         // add gesture recognizer
-//        let followTap = UITapGestureRecognizer(target: self, action: #selector(handleFollowingTapped))
-//        followTap.numberOfTapsRequired = 1
-//        label.isUserInteractionEnabled = true
-//        label.addGestureRecognizer(followTap)
+        let followTap = UITapGestureRecognizer(target: self, action: #selector(handleFollowingTapped))
+        followTap.numberOfTapsRequired = 1
+        label.isUserInteractionEnabled = true
+        label.addGestureRecognizer(followTap)
+        
         return label
     }()
     
@@ -118,34 +122,13 @@ class UserProfileHeader: UICollectionViewCell {
         return button
     }()
     
-    
-    
-    override init(frame: CGRect) {
-        super.init(frame: frame)
-        
-        addSubview(profileImageView)
-        profileImageView.anchor(top: self.topAnchor, left: self.leftAnchor, bottom: nil, right: nil, paddingTop: 16, paddingLeft: 12, paddingBottom: 0, paddingRight: 0, width: 80, height: 80)
-        //2で割ると円になる
-        profileImageView.layer.cornerRadius = 80 / 2
-        
-        addSubview(nameLabel)
-        nameLabel.anchor(top: profileImageView.bottomAnchor, left: self.leftAnchor, bottom: nil, right: nil, paddingTop: 12, paddingLeft: 12, paddingBottom: 0, paddingRight: 0, width: 0, height: 0)
-        
-        configureUserStats()
-        
-        addSubview(editProfileFollowButton)
-        editProfileFollowButton.anchor(top: postsLabel.bottomAnchor, left: postsLabel.leftAnchor, bottom: nil, right: self.rightAnchor, paddingTop: 4, paddingLeft: 8, paddingBottom: 0, paddingRight: 12, width: 0, height: 30)
-        
-        configureBottomToolBar()
+    @objc func handleFollowersTapped() {
+        delegate?.handleFollowersTapped(for: self)
     }
-    
-//    @objc func handleFollowersTapped() {
-//        delegate?.handleFollowersTapped(for: self)
-//    }
-//
-//    @objc func handleFollowingTapped() {
-//        delegate?.handleFollowingTapped(for: self)
-//    }
+
+    @objc func handleFollowingTapped() {
+        delegate?.handleFollowingTapped(for: self)
+    }
     
     @objc func handleEditProfileFollow() {
         print("follow button tapped")
@@ -192,15 +175,8 @@ class UserProfileHeader: UICollectionViewCell {
         
     }
     
-    func setUserStats(uid: String) {
-        
-        var numberOfFollowers: Int!
-        var numberOfFollowing: Int!
-        
-        // get number of followers
-        USER_FOLLOWER_REF.document(uid)
-        // get number of following
-        
+    func setUserStats(for user: User?) {
+        delegate?.setUserStats(for: self)
     }
     
     func configureEditProfileFollowButton() {
@@ -232,6 +208,26 @@ class UserProfileHeader: UICollectionViewCell {
             
         }
         
+    }
+    
+    // MARK: Init
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        
+        addSubview(profileImageView)
+        profileImageView.anchor(top: self.topAnchor, left: self.leftAnchor, bottom: nil, right: nil, paddingTop: 16, paddingLeft: 12, paddingBottom: 0, paddingRight: 0, width: 80, height: 80)
+        //2で割ると円になる
+        profileImageView.layer.cornerRadius = 80 / 2
+        
+        addSubview(nameLabel)
+        nameLabel.anchor(top: profileImageView.bottomAnchor, left: self.leftAnchor, bottom: nil, right: nil, paddingTop: 12, paddingLeft: 12, paddingBottom: 0, paddingRight: 0, width: 0, height: 0)
+        
+        configureUserStats()
+        
+        addSubview(editProfileFollowButton)
+        editProfileFollowButton.anchor(top: postsLabel.bottomAnchor, left: postsLabel.leftAnchor, bottom: nil, right: self.rightAnchor, paddingTop: 4, paddingLeft: 8, paddingBottom: 0, paddingRight: 12, width: 0, height: 30)
+        
+        configureBottomToolBar()
     }
     
     required init?(coder aDecoder: NSCoder) {

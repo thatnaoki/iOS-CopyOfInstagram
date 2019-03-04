@@ -7,6 +7,7 @@
 //
 
 import UIKit
+import Firebase
 
 private let reuseIdentifier = "SearchUserCell"
 
@@ -63,7 +64,7 @@ class SearchViewController: UITableViewController {
         let userProfileVC = UserProfileViewController(collectionViewLayout: UICollectionViewFlowLayout())
         
         // passes user from searchVC to userProfileVC
-        userProfileVC.userToLoadFromSearchVC = user
+        userProfileVC.user = user
         
         // push view controller
         navigationController?.pushViewController(userProfileVC, animated: true)
@@ -89,17 +90,11 @@ class SearchViewController: UITableViewController {
                 print(document.data())
                 let uid = document.documentID
                 
-                // snapshot cast as data
-                guard let dictionary = document.data() as Dictionary<String, AnyObject>? else{ return }
+                Firestore.fetchUser(with: uid, completion: { user in
+                    self.users.append(user)
+                    self.tableView.reloadData()
+                })
                 
-                // construct user
-                let user = User(uid: uid, dictionary: dictionary)
-                
-                // append user to data source
-                self.users.append(user)
-                
-                // reload data
-                self.tableView.reloadData()
             }
         }
     }

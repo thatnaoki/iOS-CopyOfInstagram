@@ -26,8 +26,8 @@ class SearchUserCell: UITableViewCell {
     }
     
     // MARK: Properties
-    let profileImageView: UIImageView = {
-        let iv = UIImageView()
+    let profileImageView: CustomImageView = {
+        let iv = CustomImageView()
         iv.contentMode = .scaleAspectFill
         iv.clipsToBounds = true
         iv.backgroundColor = .lightGray
@@ -42,11 +42,12 @@ class SearchUserCell: UITableViewCell {
         profileImageView.anchor(top: nil, left: leftAnchor, bottom: nil, right: nil, paddingTop: 0, paddingLeft: 8, paddingBottom: 0, paddingRight: 0, width: 48, height: 48)
         profileImageView.centerYAnchor.constraint(equalTo: self.centerYAnchor).isActive = true
         profileImageView.layer.cornerRadius = 48 / 2
-        profileImageView.clipsToBounds = true
         
         self.textLabel?.text = "Username"
         
         self.detailTextLabel?.text = "Full name"
+        
+        self.selectionStyle = .none
     }
     
     override func layoutSubviews() {

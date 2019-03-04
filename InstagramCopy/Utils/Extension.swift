@@ -7,6 +7,7 @@
 //
 
 import UIKit
+import Firebase
 
 extension UIView {
     
@@ -41,48 +42,23 @@ extension UIView {
     
 }
 
-var imageCache = [String: UIImage]()
+
 
 extension UIImageView {
-    
-    func loadImage(with urlString: String) {
-        
-        // check if image exists in cache
-        if let cachedImage = imageCache[urlString] {
-            self.image = cachedImage
-            return
-        }
-        
-        // if image does not exist in cache
-        
-        // url for image location
-        guard let url = URL(string: urlString) else {return}
-        
-        // fetch contents of URL
-        URLSession.shared.dataTask(with: url) { (data, response, error) in
-            
-            // handle error
-            if let error = error {
-                print("Failed to load image with error", error.localizedDescription)
-            }
-            
-            // image data
-            guard let imageData = data else {return}
-            
-            // create image using image data
-            let photoImage = UIImage(data: imageData)
-            
-            // set key and value for image cache
-            imageCache[url.absoluteString] = photoImage
-            
-            // set image
-            DispatchQueue.main.async {
-                self.image = photoImage
-            }
 
-        }.resume()
+    
+    
+    
+}
+
+extension Firestore {
+    
+    static func fetchUser(with uid: String, completion: @escaping(User) -> ()) {
         
+        USER_REF.document(uid).addSnapshotListener({ documentSnapshot, error in
+            guard let dictionary = documentSnapshot?.data() as Dictionary<String, AnyObject>? else {return}
+            let user = User(uid: uid, dictionary: dictionary)
+            completion(user)
+        })
     }
-    
-    
 }
